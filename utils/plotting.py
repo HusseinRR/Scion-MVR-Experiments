@@ -1,14 +1,11 @@
-"""
-Plotting utilities for SCION vs SCION++ experiments.
+"""Plotting utilities for Gluon vs Gluon++ experiments.
 
 This module provides functions to visualize convergence behavior,
 algorithm comparisons, and experiment results.
 """
 
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
-import torch
 from typing import Dict, List, Tuple, Optional
 import pandas as pd
 
@@ -67,27 +64,18 @@ def plot_convergence(
 
 
 def plot_algorithm_comparison(
-    scion_results: List[float],
-    scion_plus_results: List[float],
+    gluon_results: List[float],
+    gluon_plus_results: List[float],
     noise_type: str,
     dimension: int,
     save_path: Optional[str] = None
 ):
-    """
-    Plot comparison between SCION and SCION++ for a specific experiment.
-    
-    Args:
-        scion_results: List of gradient norms from SCION
-        scion_plus_results: List of gradient norms from SCION++
-        noise_type: Type of noise used
-        dimension: Problem dimension
-        save_path: Optional path to save the plot
-    """
+    """Plot comparison between Gluon and Gluon++ for a specific experiment."""
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
     
     # Plot 1: Histogram comparison
-    ax1.hist(scion_results, bins=50, alpha=0.7, label='SCION', density=True)
-    ax1.hist(scion_plus_results, bins=50, alpha=0.7, label='SCION++', density=True)
+    ax1.hist(gluon_results, bins=50, alpha=0.7, label='Gluon', density=True)
+    ax1.hist(gluon_plus_results, bins=50, alpha=0.7, label='Gluon++', density=True)
     ax1.set_xlabel('Average Gradient Norm')
     ax1.set_ylabel('Density')
     ax1.set_title(f'Distribution Comparison ({noise_type}, d={dimension})')
@@ -96,8 +84,8 @@ def plot_algorithm_comparison(
     ax1.grid(True, alpha=0.3)
     
     # Plot 2: Box plot comparison
-    data = [scion_results, scion_plus_results]
-    labels = ['SCION', 'SCION++']
+    data = [gluon_results, gluon_plus_results]
+    labels = ['Gluon', 'Gluon++']
     bp = ax2.boxplot(data, labels=labels, patch_artist=True)
     
     # Color the boxes
@@ -181,7 +169,9 @@ def create_summary_table(
     for noise_type, algo_results in results.items():
         for algo_name, gradient_norms in algo_results.items():
             gradient_norms = np.array(gradient_norms)
-            
+            if gradient_norms.size == 0:
+                continue
+
             summary_data.append({
                 'Noise Type': noise_type,
                 'Algorithm': algo_name,

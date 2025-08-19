@@ -1,16 +1,11 @@
-"""
-Optimization algorithms package.
+"""Optimization algorithms package for Gluon experiments.
 
 This package contains implementations of:
-- SCION (Stochastic Frank-Wolfe)
-- SCION++ (SCION with momentum variance reduction)
-- Muon (Matrix version of SCION)
-- Muon++ (Muon with momentum variance reduction)
+- Gluon (stochastic Frank-Wolfe for matrices)
+- Gluon++ (Gluon with momentum variance reduction)
 """
 
-from .scion import SCION
-from .scion_plus import SCIONPlus
-from .muon import Muon
-from .muon_plus import MuonPlus
+from .gluon import Gluon
+from .gluon_plus import GluonPlus
 
-__all__ = ['SCION', 'SCIONPlus', 'Muon', 'MuonPlus']
+__all__ = ['Gluon', 'GluonPlus']

@@ -1,8 +1,7 @@
-"""
-Norm classes for gradient projection in SCION optimizers.
+"""Norm classes for gradient projection in Gluon optimizers.
 
-This module provides various norm implementations for the LMO (Linear Minimization Oracle)
-used in Frank-Wolfe algorithms.
+This module provides various norm implementations for the linear minimization
+oracle used in Frank-Wolfe algorithms.
 """
 
 import torch
