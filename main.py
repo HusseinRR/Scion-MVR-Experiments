@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""
-Main experiment runner for SCION vs SCION++ comparison.
+"""Main experiment runner for Gluon vs Gluon++ comparison.
 
-This script implements the synthetic heavy-tailed dataset experiments
-described in Hübler et al. [2025] to compare the performance of
-SCION and SCION++ with momentum variance reduction.
+This script implements synthetic experiments for comparing the Gluon
+optimizer with its variance-reduced counterpart Gluon++ on the quadratic
+objective ``F(X) = 1/2 ||X||_F^2``.
 """
 
 import argparse
@@ -19,7 +18,7 @@ import torch.nn as nn
 import numpy as np
 from tqdm import tqdm
 
-from optimizers import SCION, SCIONPlus, Muon, MuonPlus
+from optimizers import Gluon, GluonPlus
 from utils.noise_generators import generate_noise_for_experiment, add_noise_to_gradient
 from utils.plotting import (
     plot_convergence, plot_algorithm_comparison, plot_noise_comparison,
@@ -29,46 +28,27 @@ from experiments.config import ExperimentConfig, get_default_config, get_hyperpa
 
 
 class SyntheticFunction:
-    """Synthetic function F(x) = 1/2 ||x||² for optimization experiments."""
-    
-    def __init__(self, dimension: int, problem_type: str = "vector"):
-        """
-        Initialize the synthetic function.
-        
-        Args:
-            dimension: Problem dimension
-            problem_type: "vector" or "matrix"
-        """
-        self.dimension = dimension
-        self.problem_type = problem_type
-        
-        if problem_type == "vector":
-            self.x = nn.Parameter(torch.randn(dimension, requires_grad=True))
-        else:  # matrix
-            n = int(np.sqrt(dimension)) if dimension > 1 else 1
-            self.x = nn.Parameter(torch.randn(n, n, requires_grad=True))
-    
+    """Synthetic function ``F(X) = 1/2 ||X||_F^2`` for matrix experiments."""
+
+    def __init__(self, n: int):
+        """Create the quadratic function for an ``n x n`` matrix variable."""
+        self.n = n
+        self.x = nn.Parameter(torch.randn(n, n, requires_grad=True))
+
     def forward(self):
         """Compute the function value."""
-        if self.problem_type == "vector":
-            return 0.5 * torch.norm(self.x) ** 2
-        else:
-            return 0.5 * torch.norm(self.x, p='fro') ** 2
-    
+        return 0.5 * torch.norm(self.x, p='fro') ** 2
+
     def get_gradient(self):
         """Get the gradient of the function."""
         self.x.grad = None
         loss = self.forward()
         loss.backward()
         return self.x.grad.clone()
-    
+
     def reset_parameters(self):
         """Reset parameters to random initialization."""
-        if self.problem_type == "vector":
-            self.x.data = torch.randn(self.dimension)
-        else:
-            n = int(np.sqrt(self.dimension)) if self.dimension > 1 else 1
-            self.x.data = torch.randn(n, n)
+        self.x.data = torch.randn(self.n, self.n)
 
 
 def run_single_experiment(
@@ -92,18 +72,14 @@ def run_single_experiment(
         List of average gradient norms across iterations
     """
     # Create synthetic function
-    func = SyntheticFunction(dimension, config.problem_type)
+    func = SyntheticFunction(dimension)
     func.x = func.x.to(device)
-    
+
     # Create optimizer
-    if algorithm == "SCION":
-        optimizer = SCION([func.x], **get_hyperparameters_from_paper()[algorithm])
-    elif algorithm == "SCION++":
-        optimizer = SCIONPlus([func.x], **get_hyperparameters_from_paper()[algorithm])
-    elif algorithm == "Muon":
-        optimizer = Muon([func.x], **get_hyperparameters_from_paper()[algorithm])
-    elif algorithm == "Muon++":
-        optimizer = MuonPlus([func.x], **get_hyperparameters_from_paper()[algorithm])
+    if algorithm == "Gluon":
+        optimizer = Gluon([func.x], **get_hyperparameters_from_paper()[algorithm])
+    elif algorithm == "Gluon++":
+        optimizer = GluonPlus([func.x], **get_hyperparameters_from_paper()[algorithm])
     else:
         raise ValueError(f"Unknown algorithm: {algorithm}")
     
@@ -139,10 +115,7 @@ def run_single_experiment(
         
         # Compute gradient norm for convergence criterion
         current_gradient = func.get_gradient()
-        if config.problem_type == "vector":
-            gradient_norm = torch.norm(current_gradient).item()
-        else:
-            gradient_norm = torch.norm(current_gradient, p='fro').item()
+        gradient_norm = torch.norm(current_gradient, p='fro').item()
         
         gradient_norms.append(gradient_norm)
     
@@ -151,16 +124,8 @@ def run_single_experiment(
 
 
 def run_experiment_suite(config: ExperimentConfig) -> Dict:
-    """
-    Run the complete experiment suite.
-    
-    Args:
-        config: Experiment configuration
-        
-    Returns:
-        Dictionary with all experiment results
-    """
-    print(f"Starting experiment suite: {config.problem_type} optimization")
+    """Run the complete experiment suite."""
+    print("Starting experiment suite")
     print(f"Dimensions: {config.dimensions}")
     print(f"Algorithms: {config.algorithms}")
     print(f"Noise types: {config.noise_types}")
@@ -213,7 +178,7 @@ def save_results(results: Dict, config: ExperimentConfig):
     output_dir.mkdir(exist_ok=True)
     
     # Save raw results
-    results_file = output_dir / f"results_{config.problem_type}.json"
+    results_file = output_dir / "results.json"
     with open(results_file, 'w') as f:
         # Convert numpy arrays to lists for JSON serialization
         json_results = {}
@@ -229,8 +194,10 @@ def save_results(results: Dict, config: ExperimentConfig):
         json.dump(json_results, f, indent=2)
     
     # Save summary table
-    summary_file = output_dir / f"summary_{config.problem_type}.csv"
-    create_summary_table(results, str(summary_file))
+    # Save summary tables per dimension
+    for dim_key, dim_results in results.items():
+        summary_file = output_dir / f"summary_{dim_key}.csv"
+        create_summary_table(dim_results, str(summary_file))
     
     print(f"Results saved to {output_dir}")
 
@@ -257,7 +224,7 @@ def create_plots(results: Dict, config: ExperimentConfig):
                     algo_results[algo_names[1]],
                     noise_type,
                     dimension,
-                    str(output_dir / f"comparison_{config.problem_type}_d{dimension}_{noise_type}.png")
+                    str(output_dir / f"comparison_d{dimension}_{noise_type}.png")
                 )
     
     # Noise comparison plot
@@ -267,20 +234,18 @@ def create_plots(results: Dict, config: ExperimentConfig):
             plot_noise_comparison(
                 results[dim_key],
                 dimension,
-                str(output_dir / f"noise_comparison_{config.problem_type}_d{dimension}.png")
+                str(output_dir / f"noise_comparison_d{dimension}.png")
             )
 
 
 def main():
     """Main function to run the experiments."""
-    parser = argparse.ArgumentParser(description="SCION vs SCION++ Experiments")
-    parser.add_argument("--problem_type", choices=["vector", "matrix"], default="vector",
-                       help="Problem type: vector or matrix optimization")
+    parser = argparse.ArgumentParser(description="Gluon vs Gluon++ Experiments")
     parser.add_argument("--dimension", type=int, nargs="+",
-                       help="Specific dimensions to test")
+                       help="Specific matrix dimensions to test")
     parser.add_argument("--noise_type", choices=["normal", "pareto_2.5", "pareto_1.5"],
                        help="Specific noise type to test")
-    parser.add_argument("--algorithm", choices=["SCION", "SCION++", "Muon", "Muon++"],
+    parser.add_argument("--algorithm", choices=["Gluon", "Gluon++"],
                        help="Specific algorithm to test")
     parser.add_argument("--num_runs", type=int, default=100000,
                        help="Number of runs (default: 100000)")
@@ -292,7 +257,7 @@ def main():
     args = parser.parse_args()
     
     # Get configuration
-    config = get_default_config(args.problem_type)
+    config = get_default_config()
     
     # Override with command line arguments
     if args.dimension:
@@ -309,8 +274,8 @@ def main():
         config.device = args.device
     if args.no_plots:
         config.plot_results = False
-    
-    print("SCION vs SCION++ Experiments")
+
+    print("Gluon vs Gluon++ Experiments")
     print("=" * 50)
     print(f"Configuration: {config}")
     

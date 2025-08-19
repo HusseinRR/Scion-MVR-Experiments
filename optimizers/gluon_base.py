@@ -1,17 +1,14 @@
-"""
-SCION (Stochastic Frank-Wolfe) optimizer implementation.
+"""Gluon base optimizer implementing the stochastic Frank-Wolfe method.
 
-This implements the basic SCION algorithm for optimizing F(x) = 1/2 ||x||²
-with stochastic gradients corrupted by noise.
+This class provides the core update used by the Gluon family of algorithms
+for minimizing :math:`F(X) = 1/2 \|X\|^2` under noisy gradient information.
 """
 
 import torch
-import torch.nn as nn
-from typing import Optional, Callable
 
 
-class SCION(torch.optim.Optimizer):
-    """SCION optimizer implementation.
+class GluonBase(torch.optim.Optimizer):
+    """Base Gluon optimizer.
 
     Args:
         params: Iterable of parameters to optimize or dicts defining parameter groups
