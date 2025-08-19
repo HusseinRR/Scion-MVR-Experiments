@@ -1,25 +1,22 @@
-"""
-Experiment configuration for SCION vs SCION++ experiments.
+"""Experiment configuration for Gluon vs Gluon++ experiments.
 
-This module contains the configuration settings and hyperparameters
-for the synthetic heavy-tailed dataset experiments.
+This module stores configuration settings and hyperparameters for the
+synthetic heavy-tailed experiments on ``F(X) = 1/2 ||X||_F^2``.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
-import torch
+from typing import Dict, List
 
 
 @dataclass
 class ExperimentConfig:
-    """Configuration class for SCION vs SCION++ experiments."""
-    
+    """Configuration class for Gluon experiments."""
+
     # Problem settings
-    problem_type: str = "vector"  # "vector" or "matrix"
-    dimensions: List[int] = None  # [1, 1000] for vector, [1, 30] for matrix
-    
+    dimensions: List[int] = None  # e.g. [1, 30]
+
     # Algorithm settings
-    algorithms: List[str] = None  # ["SCION", "SCION++"] or ["Muon", "Muon++"]
+    algorithms: List[str] = None  # ["Gluon", "Gluon++"]
     
     # Noise settings
     noise_types: List[str] = None  # ["normal", "pareto_2.5", "pareto_1.5"]
@@ -47,53 +44,25 @@ class ExperimentConfig:
     def __post_init__(self):
         """Set default values after initialization."""
         if self.dimensions is None:
-            if self.problem_type == "vector":
-                self.dimensions = [1, 1000]
-            else:
-                self.dimensions = [1, 30]
-        
+            self.dimensions = [1, 30]
+
         if self.algorithms is None:
-            if self.problem_type == "vector":
-                self.algorithms = ["SCION", "SCION++"]
-            else:
-                self.algorithms = ["Muon", "Muon++"]
-        
+            self.algorithms = ["Gluon", "Gluon++"]
+
         if self.noise_types is None:
             self.noise_types = ["normal", "pareto_2.5", "pareto_1.5"]
 
 
-def get_default_config(problem_type: str = "vector") -> ExperimentConfig:
-    """
-    Get default configuration for a specific problem type.
-    
-    Args:
-        problem_type: Either "vector" or "matrix"
-        
-    Returns:
-        ExperimentConfig with default settings
-    """
-    if problem_type == "vector":
-        return ExperimentConfig(
-            problem_type="vector",
-            dimensions=[1, 1000],
-            algorithms=["SCION", "SCION++"],
-            learning_rate=0.1,
-            momentum=0.9,
-            clipping_threshold=1.0,
-            mvr_parameter=0.5
-        )
-    elif problem_type == "matrix":
-        return ExperimentConfig(
-            problem_type="matrix",
-            dimensions=[1, 30],
-            algorithms=["Muon", "Muon++"],
-            learning_rate=0.1,
-            momentum=0.9,
-            clipping_threshold=1.0,
-            mvr_parameter=0.5
-        )
-    else:
-        raise ValueError(f"Unknown problem type: {problem_type}")
+def get_default_config() -> ExperimentConfig:
+    """Get the default configuration for Gluon experiments."""
+    return ExperimentConfig(
+        dimensions=[1, 30],
+        algorithms=["Gluon", "Gluon++"],
+        learning_rate=0.1,
+        momentum=0.9,
+        clipping_threshold=1.0,
+        mvr_parameter=0.5
+    )
 
 
 def get_hyperparameters_from_paper() -> Dict:
@@ -104,8 +73,8 @@ def get_hyperparameters_from_paper() -> Dict:
         Dictionary with hyperparameters for different algorithms
     """
     return {
-        "SCION": {
-            "learning_rate": 0.1,
+        "Gluon": {
+            "lr": 0.1,
             "momentum": 1.0,
             "clipping_threshold": 1.0,
             "norm": "Auto",
@@ -113,27 +82,8 @@ def get_hyperparameters_from_paper() -> Dict:
             "scale": 1.0,
             "unconstrained": False
         },
-        "SCION++": {
-            "learning_rate": 0.1,
-            "momentum": 0.9,
-            "clipping_threshold": 1.0,
-            "norm": "Auto",
-            "norm_kwargs": {},
-            "scale": 1.0,
-            "unconstrained": False,
-            "p": 0.5
-        },
-        "Muon": {
-            "learning_rate": 0.1,
-            "momentum": 1.0,
-            "clipping_threshold": 1.0,
-            "norm": "Auto",
-            "norm_kwargs": {},
-            "scale": 1.0,
-            "unconstrained": False
-        },
-        "Muon++": {
-            "learning_rate": 0.1,
+        "Gluon++": {
+            "lr": 0.1,
             "momentum": 0.9,
             "clipping_threshold": 1.0,
             "norm": "Auto",
@@ -167,7 +117,7 @@ def create_optimizer_params(config: ExperimentConfig, algorithm: str) -> Dict:
         "clipping_threshold": config.clipping_threshold
     }
     
-    if "++" in algorithm:  # SCION++ or Muon++
+    if "++" in algorithm:
         base_params["p"] = config.mvr_parameter
     
     return base_params

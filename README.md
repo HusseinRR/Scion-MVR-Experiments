@@ -1,12 +1,11 @@
-# SCION vs SCION with Momentum Variance Reduction Experiments
+# Gluon vs Gluon with Momentum Variance Reduction Experiments
 
-This project implements synthetic heavy-tailed dataset experiments to compare the performance of SCION and SCION with momentum variance reduction (SCION++) on the function F(x) = 1/2 ||x||² with different types of noise.
+This project implements synthetic heavy-tailed dataset experiments to compare the performance of Gluon and its variance-reduced variant Gluon++ on the function ``F(X) = 1/2 ||X||_F^2`` with different types of noise.
 
 ## Overview
 
 The experiments are based on the setup from Hübler et al. [2025] and evaluate:
-- **Lion vs LION++**: For d=1 and d=1000 dimensional problems
-- **Muon vs MUON++**: For n=1 and n=30 matrix problems
+- **Gluon vs Gluon++**: For n=1 and n=30 matrix problems
 
 ## Noise Types
 
@@ -22,9 +21,9 @@ The experiments are based on the setup from Hübler et al. [2025] and evaluate:
 ├── main.py                 # Main experiment runner
 ├── optimizers/             # Optimization algorithms
 │   ├── __init__.py
-│   ├── scion.py           # SCION optimizer
-│   ├── scion_plus.py      # SCION++ optimizer
-│   └── muon.py            # Muon optimizer
+│   ├── gluon_base.py      # Base Gluon optimizer
+│   ├── gluon.py           # Gluon optimizer
+│   └── gluon_plus.py      # Gluon++ optimizer
 ├── utils/                  # Utility functions
 │   ├── __init__.py
 │   ├── noise_generators.py # Noise generation functions

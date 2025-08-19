@@ -1,8 +1,7 @@
-"""
-Experiments package.
+"""Experiments package for Gluon comparisons.
 
-This package contains experiment configurations and hyperparameters
-for the SCION vs SCION++ comparison experiments.
+This package exposes configuration helpers for running Gluon vs Gluon++
+experiments.
 """
 
 from .config import *

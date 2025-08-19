@@ -1,22 +1,18 @@
-"""
-Muon optimizer implementation for matrix optimization problems.
+"""Gluon optimizer implementation for matrix optimization problems.
 
-This implements the matrix version of SCION for optimizing F(X) = 1/2 ||X||²_F
-with stochastic gradients corrupted by noise.
+This is the matrix version of the Gluon algorithm for minimizing
+``F(X) = 1/2 ||X||_F^2`` with stochastic gradients corrupted by noise.
 """
 
 import torch
-import torch.nn as nn
-from typing import Optional, Callable
-from .scion import SCION
+from .gluon_base import GluonBase
 from .norms import norm_dict
 
 
-class Muon(SCION):
-    """
-    Muon optimizer for matrix optimization problems.
-    
-    Extends SCION to handle matrix parameters with Frobenius norm constraints.
+class Gluon(GluonBase):
+    """Gluon optimizer for matrix parameters.
+
+    Extends :class:`GluonBase` to handle matrices using the Frobenius norm.
     """
     
     def __init__(self, 
@@ -29,9 +25,8 @@ class Muon(SCION):
                  norm_kwargs: dict=None, 
                  scale=1.0,
                  clipping_threshold: float = 1.0):
-        """
-        Initialize Muon optimizer.
-        
+        """Initialize the Gluon optimizer.
+
         Args:
             params: Iterable of parameters to optimize
             lr: Learning rate
@@ -43,11 +38,11 @@ class Muon(SCION):
             scale: Scale factor for updates
             clipping_threshold: Threshold for gradient clipping
         """
-        super().__init__(params, lr, momentum, unconstrained, device, norm, 
-                        norm_kwargs, scale, clipping_threshold)
+        super().__init__(params, lr, momentum, unconstrained, device, norm,
+                         norm_kwargs, scale, clipping_threshold)
 
     def step(self, closure=None):
-        """Performs a single optimization step for matrix parameters."""
+        """Perform a single optimization step for matrix parameters."""
         loss = None
         if closure is not None:
             with torch.enable_grad():

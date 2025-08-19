@@ -1,23 +1,18 @@
-"""
-Muon++ optimizer implementation.
+"""Gluon++ optimizer implementation.
 
-This implements Muon with momentum variance reduction (MVR) for
-better performance on heavy-tailed noise scenarios in matrix optimization.
+Gluon++ augments :class:`Gluon` with momentum variance reduction (MVR)
+to improve convergence under heavy-tailed noise in matrix optimization.
 """
 
 import torch
-import torch.nn as nn
-from typing import Optional, Callable
-from .muon import Muon
-from .norms import norm_dict
+from .gluon import Gluon
 
 
-class MuonPlus(Muon):
-    """
-    Muon++ optimizer with Momentum Variance Reduction (MVR).
-    
-    Extends Muon with momentum and variance reduction techniques
-    to improve convergence on heavy-tailed noise for matrix problems.
+class GluonPlus(Gluon):
+    """Gluon++ optimizer with Momentum Variance Reduction (MVR).
+
+    Extends :class:`Gluon` with momentum and variance reduction to improve
+    convergence on heavy-tailed noise for matrix problems.
     """
     
     def __init__(
@@ -33,9 +28,8 @@ class MuonPlus(Muon):
         clipping_threshold: float = 1.0,
         p: float = 0.5
     ):
-        """
-        Initialize Muon++ optimizer.
-        
+        """Initialize the Gluon++ optimizer.
+
         Args:
             params: Iterable of parameters to optimize
             lr: Learning rate
@@ -48,8 +42,8 @@ class MuonPlus(Muon):
             clipping_threshold: Threshold for gradient clipping
             p: MVR parameter (0 < p < 1)
         """
-        super().__init__(params, lr, momentum, unconstrained, device, norm, 
-                        norm_kwargs, scale, clipping_threshold)
+        super().__init__(params, lr, momentum, unconstrained, device, norm,
+                         norm_kwargs, scale, clipping_threshold)
         self.p = p
         self.is_initialized = False
         
@@ -97,7 +91,7 @@ class MuonPlus(Muon):
         if grad_new_dict is not None and grad_old_dict is not None:
             self._mvr_step(grad_new_dict, grad_old_dict)
         else:
-            # Standard Muon step
+            # Standard Gluon step
             super().step(closure)
 
         return loss
@@ -109,7 +103,6 @@ class MuonPlus(Muon):
                 lr = group['lr']
                 scale = group['scale']
                 unconstrained = group['unconstrained']
-                norm_backend = norm_dict[group['norm']](**group['norm_kwargs'])
                 
                 for p in group['params']:
                     if not p.requires_grad or p not in grad_new_dict:
